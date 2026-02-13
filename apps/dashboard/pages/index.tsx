@@ -1,23 +1,16 @@
-import type { Patreon } from '@prisma/client';
 import clsx from 'clsx';
 import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import { useEffect, useState } from 'react';
 
 import Button from '../components/button';
-import DropboxButton from '../components/dropboxButton';
 import Dropdown, { DropdownItem } from '../components/dropdown';
 import GoogleButton from '../components/googleButton';
 import Link from '../components/link';
-import MicrosoftButton from '../components/microsoftButton';
 import { Modal } from '../components/modal';
-import Row from '../components/row';
 import Section from '../components/section';
 import SelectableRow from '../components/selectableRow';
-import DropboxLogo from '../components/svg/dropbox';
 import GoogleDriveLogo from '../components/svg/googleDrive';
-import OneDriveLogo from '../components/svg/oneDrive';
-import PatreonLogo from '../components/svg/patreon';
 import Toggle from '../components/toggle';
 import prisma from '../lib/prisma';
 import { getAvatarUrl, parseUser } from '../utils';
@@ -26,12 +19,8 @@ import { DiscordUser } from '../utils/types';
 interface Props {
   user: DiscordUser;
   rewardTier: number | null;
-  patronId: string | null;
-  patron: Patreon | null;
   drive: DriveProps;
   googleDrive: boolean;
-  microsoft: boolean;
-  dropbox: boolean;
 }
 
 interface DriveProps {
@@ -65,21 +54,15 @@ const formats: DropdownItem[] = [
   },
   {
     title: 'FLAC Single-Track Mix',
-    suffix: '($4 Tier)',
-    value: 'flac-mix',
-    tierRequired: 20
+    value: 'flac-mix'
   },
   {
     title: 'AAC Single-Track Mix',
-    suffix: '($4 Tier)',
-    value: 'aac-mix',
-    tierRequired: 20
+    value: 'aac-mix'
   },
   {
     title: 'Ogg Vorbis Single-Track Mix',
-    suffix: '($4 Tier)',
-    value: 'vorbis-mix',
-    tierRequired: 20
+    value: 'vorbis-mix'
   },
   {
     title: 'Ogg FLAC',
@@ -107,20 +90,11 @@ const formats: DropdownItem[] = [
   }
 ];
 
-const serviceNames: { [key: string]: string } = {
-  google: 'Google Drive',
-  dropbox: 'Dropbox',
-  onedrive: 'OneDrive',
-  box: 'Box'
-};
-
 export default function Index(props: Props) {
   const [modalParsed, setModalParsed] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('Modal');
   const [modalContent, setModalContent] = useState('');
-
-  const [patronUnlinkOpen, setPatronUnlinkOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [drive, setDrive] = useState(props.drive);
@@ -128,17 +102,9 @@ export default function Index(props: Props) {
   const [driveFormat, setDriveFormat] = useState(
     formats.find((f) => f.value === `${props.drive.format || 'flac'}-${props.drive.container || 'zip'}`) ?? formats[0]
   );
-  const [driveService, setDriveService] = useState(props.drive.service ?? 'google');
+  const [driveService, setDriveService] = useState('google');
 
-  const driveCanEnable =
-    (driveService === 'google' && props.googleDrive) ||
-    (driveService === 'onedrive' && props.microsoft) ||
-    (driveService === 'dropbox' && props.dropbox);
-
-  const benefitDate = new Date(Date.now() + 1000 * 60 * 60);
-  benefitDate.setMinutes(0);
-  benefitDate.setSeconds(0);
-  benefitDate.setMilliseconds(0);
+  const driveCanEnable = props.googleDrive;
 
   // Use modal
   useEffect(() => {
@@ -149,12 +115,8 @@ export default function Index(props: Props) {
     if (p.get('error')) {
       const error = p.get('error');
       const from = p.get('from');
-      // titlecase from
       if (from === 'google') title = 'An error occurred while connecting to Google.';
-      else if (from === 'patreon') title = 'An error occurred while connecting to Patreon.';
       else if (from === 'discord') title = 'An error occurred while connecting to Discord.';
-      else if (from === 'microsoft') title = 'An error occurred while connecting to Microsoft.';
-      else if (from === 'dropbox') title = 'An error occurred while connecting to Dropbox.';
       else title = 'An error occurred.';
 
       if (error === 'access_denied') content = 'You denied access to your account.';
@@ -164,37 +126,12 @@ export default function Index(props: Props) {
     }
 
     const r = p.get('r');
-    if (r === 'patreon_linked') {
-      title = 'Patreon linked!';
-      content = 'You have successfully linked your Patreon account. It may take up to an hour for your tier to update.';
-    } else if (r === 'patreon_unlinked') {
-      title = 'Patreon unlinked.';
-      content = 'You have successfully unlinked your Patreon account.';
-    } else if (r === 'google_linked') {
+    if (r === 'google_linked') {
       title = 'Google Drive linked!';
       content = 'You have successfully linked your Google Drive account.';
-    } else if (r === 'microsoft_linked') {
-      title = 'Microsoft OneDrive linked!';
-      content = 'You have successfully linked your Microsoft account.';
     } else if (r === 'google_unlinked') {
       title = 'Google Drive unlinked.';
       content = 'You have successfully unlinked your Google Drive account.';
-    } else if (r === 'microsoft_unlinked') {
-      title = 'Microsoft OneDrive unlinked.';
-      content = (
-        <span>
-          You have unlinked your Microsoft account, but you can revoke app permissions in your{' '}
-          <Link href="https://microsoft.com/consent">Microsoft settings</Link>.
-        </span>
-      );
-    } else if (r === 'dropbox_unlinked') {
-      title = 'Dropbox unlinked.';
-      content = (
-        <span>
-          You have unlinked your Dropbox account, but you can revoke app permissions in your{' '}
-          <Link href="https://www.dropbox.com/account/connected_apps">Dropbox settings</Link>.
-        </span>
-      );
     }
 
     if (title && content) {
@@ -257,7 +194,7 @@ export default function Index(props: Props) {
   return (
     <>
       <Head>
-        <title>Craig Dashboard</title>
+        <title>Yeecord Dashboard</title>
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />
         <meta httpEquiv="Content-Language" content="en" />
@@ -265,8 +202,8 @@ export default function Index(props: Props) {
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#2dd4bf" />
-        <meta name="og:site_name" content="Craig" />
-        <meta name="og:title" content="Craig Dashboard" />
+        <meta name="og:site_name" content="Yeecord" />
+        <meta name="og:title" content="Yeecord Dashboard" />
         <meta name="og:description" content="The multi-track recording bot for Discord." />
         <meta name="og:locale" content="en_US" />
         <meta name="og:image" content="/icon-512x512.png" />
@@ -295,117 +232,47 @@ export default function Index(props: Props) {
                 {tierNames[props.rewardTier] ?? `#${props.rewardTier}`}
               </span>
             </div>
-            <Row title="Patreon" icon={<PatreonLogo className="w-8 h-8 rounded-full" />}>
-              {props.patronId ? (
-                <Button type="transparent" className="text-red-500" onClick={() => setPatronUnlinkOpen(true)}>
-                  Disconnect
-                </Button>
-              ) : (
-                <Button type="brand" onClick={() => (location.href = '/api/patreon/oauth')}>
-                  Connect
-                </Button>
+            <Button type="brand" onClick={() => (location.href = '/recordings')}>
+              My Recordings
+            </Button>
+            <Section title="Cloud Backup (Google Drive)" big>
+              <Toggle
+                label="Upload Recordings to Google Drive"
+                description="Note: After your recording has finished, the recording will not be able to be downloaded while the recording is still uploading."
+                tooltip={!driveCanEnable ? 'You must link your Google Drive account to enable cloud backups.' : undefined}
+                className="w-full"
+                disabled={!driveCanEnable || loading}
+                checked={driveEnabled}
+                onToggle={setDriveEnabled}
+              />
+              <SelectableRow
+                title="Google Drive"
+                icon={<GoogleDriveLogo className="w-8 h-8" />}
+                selected={true}
+                disabled={loading}
+                hidden={!props.googleDrive}
+                onClick={() => { }}
+              >
+                {props.googleDrive ? (
+                  <Button type="transparent" className="text-red-500" onClick={() => (location.href = '/api/google/disconnect')}>
+                    Disconnect
+                  </Button>
+                ) : (
+                  <GoogleButton onClick={() => (location.href = '/api/google/oauth')} />
+                )}
+              </SelectableRow>
+              {!props.googleDrive && (
+                <GoogleButton onClick={() => (location.href = '/api/google/oauth')} />
               )}
-            </Row>
-            <Section title="Cloud Backup" big>
-              {props.rewardTier === 0 ? (
-                <div className="flex flex-col w-full">
-                  <span>To enable cloud backup to services like Google Drive, you must be a patron.</span>
-                  <Link href="https://patreon.com/CraigRec">Become a patron</Link> <br />
-                  <h2 className="font-display text-lg">Have you recently became a patron?</h2>
-                  <ul className="list-disc list-inside">
-                    <li>
-                      Benefits are checked at the start of every hour, so you should get your benefits at{' '}
-                      <time dateTime={benefitDate.toISOString()} className="bg-white/20 px-1 rounded-md">
-                        {typeof Intl !== 'undefined'
-                          ? Intl.DateTimeFormat('en-US', { hour: 'numeric', timeZoneName: 'short' }).format(benefitDate)
-                          : benefitDate.toLocaleString()}
-                      </time>{' '}
-                      (your time zone).
-                    </li>
-                    <li>
-                      If you linked your Discord through Patreon itself <b>when you started to become a patron</b>, it should give you benefits
-                      automatically.
-                    </li>
-                    <li>
-                      Make sure you are logging in with <b>the same Discord account you record with</b> and connecting to{' '}
-                      <b>the same Patreon account you are a patron with</b>.
-                    </li>
-                    <li>
-                      <i>Still</i> didn't get your benefits? Join the <Link href="https://craig.chat/support">support server</Link> for help.
-                    </li>
-                  </ul>
-                </div>
-              ) : (
-                <>
-                  <Toggle
-                    label={`Upload Recordings to ${serviceNames[driveService] || 'Drive'}`}
-                    description="Note: After your recording has finished, the recording will not be able to be downloaded while the recording is still uploading."
-                    tooltip={!driveCanEnable ? 'You must link a service to your account to enable cloud backups.' : undefined}
-                    className="w-full"
-                    disabled={!driveCanEnable || loading}
-                    checked={driveEnabled}
-                    onToggle={setDriveEnabled}
-                  />
-                  <SelectableRow
-                    title="Google Drive"
-                    icon={<GoogleDriveLogo className="w-8 h-8" />}
-                    selected={drive.service === 'google'}
-                    disabled={loading}
-                    hidden={!props.googleDrive}
-                    onClick={() => setDriveService('google')}
-                  >
-                    {props.googleDrive ? (
-                      <Button type="transparent" className="text-red-500" onClick={() => (location.href = '/api/google/disconnect')}>
-                        Disconnect
-                      </Button>
-                    ) : (
-                      <GoogleButton onClick={() => (location.href = '/api/google/oauth')} />
-                    )}
-                  </SelectableRow>
-                  <SelectableRow
-                    title="Microsoft OneDrive"
-                    icon={<OneDriveLogo className="w-8 h-8" />}
-                    selected={drive.service === 'onedrive'}
-                    disabled={loading}
-                    hidden={!props.microsoft}
-                    onClick={() => setDriveService('onedrive')}
-                  >
-                    {props.microsoft ? (
-                      <Button type="transparent" className="text-red-500" onClick={() => (location.href = '/api/microsoft/disconnect')}>
-                        Disconnect
-                      </Button>
-                    ) : (
-                      <MicrosoftButton onClick={() => (location.href = '/api/microsoft/oauth')} />
-                    )}
-                  </SelectableRow>
-                  <SelectableRow
-                    title="Dropbox"
-                    icon={<DropboxLogo className="w-8 h-8" />}
-                    selected={drive.service === 'dropbox'}
-                    disabled={loading}
-                    hidden={!props.dropbox}
-                    onClick={() => setDriveService('dropbox')}
-                  >
-                    {props.dropbox ? (
-                      <Button type="transparent" className="text-red-500" onClick={() => (location.href = '/api/dropbox/disconnect')}>
-                        Disconnect
-                      </Button>
-                    ) : (
-                      <DropboxButton onClick={() => (location.href = '/api/dropbox/oauth')} />
-                    )}
-                  </SelectableRow>
-                  <Dropdown
-                    disabled={loading}
-                    items={formats}
-                    label="Format"
-                    className={'w-full'}
-                    full
-                    selected={driveFormat}
-                    onSelect={setDriveFormat}
-                    tier={props.rewardTier}
-                  />
-                </>
-              )}
+              <Dropdown
+                disabled={loading}
+                items={formats}
+                label="Format"
+                className={'w-full'}
+                full
+                selected={driveFormat}
+                onSelect={setDriveFormat}
+              />
             </Section>
             <Button type="danger" onClick={() => (location.href = '/api/logout')}>
               Logout
@@ -413,19 +280,6 @@ export default function Index(props: Props) {
           </div>
         </div>
       </div>
-      <Modal open={patronUnlinkOpen} title="Are you sure you want to unlink your Patreon account?" setOpen={setPatronUnlinkOpen}>
-        <div className="flex flex-col gap-2">
-          <span>Your benefits will be revoked if you unlink your Patreon.</span>
-          <div className="flex gap-2 items-center">
-            <Button type="brand" onClick={() => (location.href = '/api/patreon/disconnect')} className="w-fit">
-              Unlink
-            </Button>
-            <Button onClick={() => setPatronUnlinkOpen(false)} className="w-fit">
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </Modal>
       <Modal open={modalOpen} title={modalTitle} setOpen={setModalOpen}>
         <div className="flex flex-col gap-2">
           <span>{modalContent}</span>
@@ -457,26 +311,19 @@ export const getServerSideProps: GetServerSideProps<Props> = async function (ctx
     };
 
   const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-  const patron = dbUser && dbUser.patronId ? await prisma.patreon.findUnique({ where: { id: dbUser.patronId } }) : null;
   const googleDrive = await prisma.googleDriveUser.findUnique({ where: { id: user.id } });
-  const microsoft = await prisma.microsoftUser.findUnique({ where: { id: user.id } });
-  const dropbox = await prisma.dropboxUser.findUnique({ where: { id: user.id } });
 
   return {
     props: {
       user,
       rewardTier: dbUser?.rewardTier || 0,
-      patronId: dbUser?.patronId || null,
-      patron,
       drive: {
         enabled: dbUser?.driveEnabled || false,
         service: dbUser?.driveService || 'google',
         format: dbUser?.driveFormat || 'flac',
         container: dbUser?.driveContainer || 'zip'
       },
-      googleDrive: !!googleDrive,
-      microsoft: !!microsoft,
-      dropbox: !!dropbox
+      googleDrive: !!googleDrive
     }
   };
 };

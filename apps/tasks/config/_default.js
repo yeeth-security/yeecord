@@ -43,7 +43,8 @@ module.exports = {
   recording: {
     fallbackExpiration: 24 * 60 * 60 * 1000,
     path: '../../rec',
-    skipIds: []
+    skipIds: [],
+    skipAll: true // Never delete recordings from disk
   },
 
   timezone: 'America/New_York',

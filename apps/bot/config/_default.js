@@ -12,7 +12,7 @@ module.exports = {
   sharding: {
     file: './index.js',
     // The amount of shards to spawn in sharding mode
-    shardCount: 2,
+    shardCount: 1,
     // The amount of time to wait for a ready
     readyTimeout: 60000
   },
@@ -101,14 +101,15 @@ module.exports = {
         [-1]: {
           // Greater Weasels
           recordHours: 24,
-          downloadExpiryHours: 720,
+          downloadExpiryHours: 876000, // ~100 years = never expire
           features: ['mix', 'auto', 'drive', 'glowers', 'eccontinuous', 'ecflac', 'mp3']
         },
         [0]: {
-          // Default
-          recordHours: 6,
-          downloadExpiryHours: 168,
-          features: []
+          // Default (unlocked for self-hosted)
+          recordHours: 24,
+          downloadExpiryHours: 876000, // ~100 years = never expire
+          features: ['mix', 'auto', 'drive', 'glowers', 'eccontinuous', 'ecflac', 'mp3'],
+          sizeLimitMult: 2
         },
         [10]: {
           // Supporters / I'm chipping in!

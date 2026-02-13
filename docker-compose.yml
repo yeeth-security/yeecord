@@ -1,30 +1,34 @@
 services:
   db:
-    image: postgres
-    restart: always
+    image: postgres:16-alpine
+    container_name: yeecord-db
+    restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: craig
       POSTGRES_DB: craig
       POSTGRES_USER: craig
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U craig"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     volumes:
       - 'db_data:/var/lib/postgresql/data'
+    networks:
+      - default
+
   redis:
     image: redis
-    restart: always
-    ports:
-      - "6379:6379"
-  craig:
+    container_name: yeecord-redis
+    restart: unless-stopped
+    networks:
+      - default
+
+  yeecord:
     build: .
-    ports:
-      - "3000:3000"
-      - "5029:5029"
+    container_name: yeecord
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
@@ -32,9 +36,16 @@ services:
       redis:
         condition: service_started
     volumes:
-      - 'craig_rec:/app/rec'
+      - 'yeecord_rec:/app/rec'
       - './install.config:/app/install.config:ro'
+    networks:
+      - default
+      - caddynet
 
 volumes:
   db_data:
-  craig_rec:
+  yeecord_rec:
+
+networks:
+  caddynet:
+    external: true

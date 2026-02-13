@@ -3,8 +3,8 @@ module.exports = {
     {
       name: 'craig.horse',
       script: 'dist/index.js',
-      instances: '8',
-      exec_mode: 'cluster',
+      instances: 1,
+      exec_mode: 'fork',
       wait_ready: true,
       listen_timeout: 10000,
       kill_timeout: 3000,

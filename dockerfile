@@ -30,6 +30,8 @@ WORKDIR /app
 
 # Copy the repo, particularly environment variables with discord API keys
 COPY . .
+# Ensure all scripts are executable (SFTP mounts can strip +x)
+RUN find . -name '*.sh' -exec chmod +x {} +
 # Run first-time setup for faster restarts
 RUN ./install.sh
 
